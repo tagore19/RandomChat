@@ -1,0 +1,13 @@
+{
+  "name": "strangerconnect",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zero-cost ephemeral real-time chat platform with client-side compressed photo sharing",
+  "scripts": {
+    "start:server": "node server/server.js",
+    "dev:server": "node --watch server/server.js",
+    "dev:client": "npm run dev --prefix client",
+    "build:client": "npm run build --prefix client",
+    "test:e2e": "node tests/test-e2e.cjs"
+  }
+}
