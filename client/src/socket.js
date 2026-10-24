@@ -12,14 +12,18 @@ const getSocketUrl = () => {
 const SERVER_URL = getSocketUrl();
 
 // Generate or retrieve persistent ephemeral session ID for background reconnection
+// Each browser tab gets a unique tab instance salt so two tabs on the same laptop can pair instantly!
 export const getSessionId = () => {
   if (typeof window === 'undefined') return 'server_session';
+  if (!window.__sc_tab_instance_id) {
+    window.__sc_tab_instance_id = Math.random().toString(36).substring(2, 7);
+  }
   let sid = sessionStorage.getItem('sc_session_id');
   if (!sid) {
     sid = 'sc_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
     sessionStorage.setItem('sc_session_id', sid);
   }
-  return sid;
+  return `${sid}_${window.__sc_tab_instance_id}`;
 };
 
 export const socket = io(SERVER_URL, {
@@ -27,11 +31,10 @@ export const socket = io(SERVER_URL, {
     sessionId: getSessionId()
   },
   autoConnect: true,
-  transports: ['websocket', 'polling'],
+  transports: ['polling', 'websocket'],
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 500,
   reconnectionDelayMax: 2000,
   timeout: 20000
 });
-
