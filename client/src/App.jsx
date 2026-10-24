@@ -296,7 +296,14 @@ export default function App() {
     clearPersistedChat();
     analytics.trackSearchStarted();
     setAppState('searching');
-    socket.emit('find_stranger');
+    if (!socket.connected) {
+      socket.connect();
+      socket.once('connect', () => {
+        socket.emit('find_stranger');
+      });
+    } else {
+      socket.emit('find_stranger');
+    }
   }, []);
 
   const handleStartChatting = useCallback(() => {
@@ -336,7 +343,14 @@ export default function App() {
     setAppState('searching');
     setPartnerLeft(false);
     setIsPartnerTyping(false);
-    socket.emit('skip', { autoRequeue: true });
+    if (!socket.connected) {
+      socket.connect();
+      socket.once('connect', () => {
+        socket.emit('skip', { autoRequeue: true });
+      });
+    } else {
+      socket.emit('skip', { autoRequeue: true });
+    }
   }, []);
 
   const handleReportStranger = useCallback((category) => {
