@@ -72,6 +72,19 @@ export default function App() {
     } catch {}
   }, [appState, messages]);
 
+  // Auto-refresh search queue while searching to guarantee matchmaking across mobile network hops
+  useEffect(() => {
+    if (appState !== 'searching') return;
+
+    const interval = setInterval(() => {
+      if (socket.connected) {
+        socket.emit('find_stranger');
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [appState]);
+
   // Viewport handling for iOS Safari & Android virtual keyboards
   useEffect(() => {
     let rafId = null;
@@ -124,6 +137,9 @@ export default function App() {
       if (document.visibilityState === 'visible') {
         if (socket.connected) {
           socket.emit('check_session');
+          if (appStateRef.current === 'searching') {
+            socket.emit('find_stranger');
+          }
         } else {
           socket.connect();
         }
@@ -134,6 +150,9 @@ export default function App() {
     const handleConnect = () => {
       setIsConnected(true);
       socket.emit('check_session');
+      if (appStateRef.current === 'searching') {
+        socket.emit('find_stranger');
+      }
     };
 
     const handleDisconnect = () => {
