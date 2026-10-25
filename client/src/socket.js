@@ -6,7 +6,17 @@ const getSocketUrl = () => {
   if (import.meta.env.VITE_SOCKET_URL) {
     return import.meta.env.VITE_SOCKET_URL;
   }
-  return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8080';
+  if (typeof window !== 'undefined') {
+    const isLocal = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.hostname.startsWith('192.168.') ||
+                    window.location.hostname.startsWith('10.');
+    if (isLocal) {
+      return window.location.origin;
+    }
+  }
+  // Production default (Vercel, custom domain, etc.) -> connects directly to live Render backend
+  return 'https://randomchat-zg8j.onrender.com';
 };
 
 const SERVER_URL = getSocketUrl();
