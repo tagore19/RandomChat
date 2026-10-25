@@ -30,6 +30,18 @@ app.get('/', (req, res) => {
   res.send('StrangerConnect Real-Time Signaling Server is running.');
 });
 
+// Diagnostic endpoint to inspect live matchmaker queue in production
+app.get('/status', (req, res) => {
+  res.status(200).json({
+    onlineSockets: io.engine.clientsCount || 0,
+    waitingQueueSize: waitingQueue.size,
+    waitingQueueSessions: Array.from(waitingQueue),
+    activeRoomsCount: activeRooms.size,
+    activeSessionsCount: sessions.size,
+    uptime: Math.floor(process.uptime())
+  });
+});
+
 const server = http.createServer(app);
 
 // Initialize Socket.io with 1MB max HTTP buffer size for compressed photos
@@ -186,8 +198,8 @@ function enqueueAndMatch(sessionId, socket) {
 
     console.log(`🎉 [MATCHED] Room ${roomId}: ${sessionId} <---> ${partnerSession.sessionId}`);
 
-    io.to(socket.id).emit('matched', { roomId });
-    if (partnerSocket) io.to(partnerSocket.id).emit('matched', { roomId });
+    socket.emit('matched', { roomId });
+    if (partnerSocket) partnerSocket.emit('matched', { roomId });
   } else {
     waitingQueue.add(sessionId);
     console.log(`⏳ [SEARCHING] Session ${sessionId} entered waiting queue. Queue size: ${waitingQueue.size}`);
