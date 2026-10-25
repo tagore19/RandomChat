@@ -31,7 +31,7 @@ export const socket = io(SERVER_URL, {
     sessionId: getSessionId()
   },
   autoConnect: true,
-  transports: ['polling', 'websocket'],
+  transports: ['websocket'],
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 500,

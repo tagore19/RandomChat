@@ -297,7 +297,8 @@ io.on('connection', (socket) => {
         if (isUserA) room.queuedForA = [];
         else room.queuedForB = [];
       }
-    } else {
+    } else if (session.roomId) {
+      session.roomId = null;
       socket.emit('session_invalidated');
     }
   };

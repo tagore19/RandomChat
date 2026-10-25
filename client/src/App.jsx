@@ -72,19 +72,6 @@ export default function App() {
     } catch {}
   }, [appState, messages]);
 
-  // Auto-refresh search queue while searching to guarantee matchmaking across mobile network hops
-  useEffect(() => {
-    if (appState !== 'searching') return;
-
-    const interval = setInterval(() => {
-      if (socket.connected) {
-        socket.emit('find_stranger');
-      }
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [appState]);
-
   // Viewport handling for iOS Safari & Android virtual keyboards
   useEffect(() => {
     let rafId = null;
@@ -194,6 +181,11 @@ export default function App() {
     };
 
     const handleSessionInvalidated = () => {
+      const chatStart = Number(sessionStorage.getItem(STORAGE_KEYS.CHAT_START)) || 0;
+      if (Date.now() - chatStart < 10000) {
+        console.log('🛡️ Ignoring premature session_invalidated on freshly matched room');
+        return;
+      }
       clearPersistedChat();
       if (appStateRef.current === 'chatting') {
         setPartnerLeft(true);
