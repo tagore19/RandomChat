@@ -303,6 +303,17 @@ export default function App() {
   }, []);
 
   // Action Handlers
+  // Heartbeat while searching: guarantees pairing across mobile network hops or delayed partner arrival
+  useEffect(() => {
+    if (appState !== 'searching') return;
+    const interval = setInterval(() => {
+      if (socket.connected) {
+        socket.emit('find_stranger');
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [appState]);
+
   const triggerMatchmaking = useCallback(() => {
     clearPersistedChat();
     analytics.trackSearchStarted();

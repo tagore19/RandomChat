@@ -183,9 +183,11 @@ function enqueueAndMatch(sessionId, socket) {
 
     if (candidateId !== sessionId) {
       const candidate = sessions.get(candidateId);
-      if (candidate && candidate.isOnline && candidate.socketId) {
-        const candidateSocket = io.sockets.sockets.get(candidate.socketId);
-        if (candidateSocket && candidateSocket.connected) {
+      if (candidate && candidate.socketId) {
+        // Verify socket is alive in root namespace
+        const isSocketAlive = io.of('/').sockets.has(candidate.socketId) || io.sockets.adapter.sids.has(candidate.socketId);
+        if (isSocketAlive) {
+          candidate.isOnline = true; // Heal online status if stale disconnect temporarily set it false
           partnerSession = candidate;
           break;
         }
@@ -211,13 +213,15 @@ function enqueueAndMatch(sessionId, socket) {
     partnerSession.roomId = roomId;
 
     socket.join(roomId);
-    const partnerSocket = io.sockets.sockets.get(partnerSession.socketId);
-    if (partnerSocket) partnerSocket.join(roomId);
+    if (partnerSession.socketId) {
+      io.in(partnerSession.socketId).socketsJoin(roomId);
+      io.to(partnerSession.socketId).emit('matched', { roomId });
+    }
 
     console.log(`🎉 [MATCHED] Room ${roomId}: ${sessionId} <---> ${partnerSession.sessionId}`);
 
     socket.emit('matched', { roomId });
-    if (partnerSocket) partnerSocket.emit('matched', { roomId });
+    io.to(roomId).emit('matched', { roomId });
   } else {
     waitingQueue.add(sessionId);
     console.log(`⏳ [SEARCHING] Session ${sessionId} entered waiting queue. Queue size: ${waitingQueue.size}`);
@@ -518,6 +522,12 @@ io.on('connection', (socket) => {
 
     const sess = sessions.get(sid);
     if (!sess) return;
+
+    // Guard: If this session already reconnected on another socket, do not mark offline or clear state!
+    if (sess.socketId && sess.socketId !== socket.id) {
+      console.log(`ℹ️ [STALE DISCONNECT IGNORED] Socket ${socket.id} closed for ${sid}, but session is already active on socket ${sess.socketId}`);
+      return;
+    }
 
     sess.isOnline = false;
     sess.socketId = null;

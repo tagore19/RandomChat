@@ -15,15 +15,17 @@ const SERVER_URL = getSocketUrl();
 // Each browser tab gets a unique tab instance salt so two tabs on the same laptop can pair instantly!
 export const getSessionId = () => {
   if (typeof window === 'undefined') return 'server_session';
-  if (!window.__sc_tab_instance_id) {
-    window.__sc_tab_instance_id = Math.random().toString(36).substring(2, 7);
+  let tabId = sessionStorage.getItem('sc_tab_instance_id');
+  if (!tabId) {
+    tabId = Math.random().toString(36).substring(2, 7);
+    sessionStorage.setItem('sc_tab_instance_id', tabId);
   }
   let sid = sessionStorage.getItem('sc_session_id');
   if (!sid) {
     sid = 'sc_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
     sessionStorage.setItem('sc_session_id', sid);
   }
-  return `${sid}_${window.__sc_tab_instance_id}`;
+  return `${sid}_${tabId}`;
 };
 
 export const socket = io(SERVER_URL, {
