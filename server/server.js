@@ -32,12 +32,30 @@ app.get('/', (req, res) => {
 
 // Diagnostic endpoint to inspect live matchmaker queue in production
 app.get('/status', (req, res) => {
+  const roomsList = [];
+  for (const [rid, r] of activeRooms.entries()) {
+    roomsList.push({
+      roomId: rid,
+      userA: { sid: r.userA.sessionId, socketId: r.userA.socketId, isOnline: r.userA.isOnline },
+      userB: { sid: r.userB.sessionId, socketId: r.userB.socketId, isOnline: r.userB.isOnline }
+    });
+  }
+  const sessionsList = [];
+  for (const [sid, s] of sessions.entries()) {
+    sessionsList.push({
+      sessionId: sid,
+      socketId: s.socketId,
+      roomId: s.roomId,
+      isOnline: s.isOnline
+    });
+  }
   res.status(200).json({
     onlineSockets: io.engine.clientsCount || 0,
     waitingQueueSize: waitingQueue.size,
     waitingQueueSessions: Array.from(waitingQueue),
     activeRoomsCount: activeRooms.size,
-    activeSessionsCount: sessions.size,
+    rooms: roomsList,
+    sessions: sessionsList,
     uptime: Math.floor(process.uptime())
   });
 });
